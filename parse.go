@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -146,12 +145,12 @@ func (p *Parser) Wait() {
 func (p *Parser) getICal(url string) (string, error) {
 	re, _ := regexp.Compile(`http(s){0,1}:\/\/`)
 
-	var fileName string
+	var fileContent string
 	var errDownload error
 
 	if re.FindString(url) != "" {
-		// download the file and store it local
-		fileName, errDownload = downloadFromUrl(url, p.httpClient)
+		// download the file
+		fileContent, errDownload = downloadFromUrl(url, p.httpClient)
 
 		if errDownload != nil {
 			return "", errDownload
@@ -159,6 +158,7 @@ func (p *Parser) getICal(url string) (string, error) {
 
 	} else { //  use a file from local storage
 
+		var fileName string
 		//  check if file exists
 		if fileExists(url) {
 			fileName = url
@@ -166,20 +166,15 @@ func (p *Parser) getICal(url string) (string, error) {
 			err := fmt.Sprintf("File %s does not exists", url)
 			return "", errors.New(err)
 		}
+		//  read the file with the ical data
+		fileBytes, errReadFile := ioutil.ReadFile(fileName)
+
+		if errReadFile != nil {
+			return "", errReadFile
+		}
+		fileContent = string(fileBytes)
 	}
-
-	//  read the file with the ical data
-	fileContent, errReadFile := ioutil.ReadFile(fileName)
-
-	if errReadFile != nil {
-		return "", errReadFile
-	}
-
-	if DeleteTempFiles && re.FindString(url) != "" {
-		os.Remove(fileName)
-	}
-
-	return fmt.Sprintf("%s", fileContent), nil
+	return fileContent, nil
 }
 
 // set the http client for using arbirtrary http clients like

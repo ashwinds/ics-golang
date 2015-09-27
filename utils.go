@@ -1,16 +1,12 @@
 package ics
 
 import (
-	"fmt"
-	// "io/ioutil"
-	"strings"
-	// "errors"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"regexp"
+	"strings"
 	"sync"
-	"time"
 )
 
 var o sync.Once
@@ -43,25 +39,6 @@ const IcsFormatWholeDay = "20060102"
 
 // downloads the calendar before parsing it
 func downloadFromUrl(url string, client *http.Client) (string, error) {
-	// split the url to get the name of the file (like basic.ics)
-	tokens := strings.Split(url, "/")
-
-	// create the name of the file
-	fileName := fmt.Sprintf("%s%s_%s", FilePath, time.Now().Format(uts), tokens[len(tokens)-1])
-
-	// creates the path
-	os.MkdirAll(FilePath, 0777)
-
-	// creates the file in the path folder
-	output, err := os.Create(fileName)
-
-	if err != nil {
-
-		return "", err
-	}
-	// close the file
-	defer output.Close()
-
 	// get the URL
 	response, err := client.Get(url)
 
@@ -71,17 +48,12 @@ func downloadFromUrl(url string, client *http.Client) (string, error) {
 	}
 	// close the response body
 	defer response.Body.Close()
-
-	// copy the response from the url to the temp local file
-	_, err = io.Copy(output, response.Body)
-
+	contents, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-
 		return "", err
 	}
-
 	//return the file that contains the info
-	return fileName, nil
+	return string(contents), nil
 }
 
 func stringToByte(str string) []byte {
