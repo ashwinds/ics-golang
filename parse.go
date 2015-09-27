@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"regexp"
 	"strconv"
@@ -29,6 +30,7 @@ type Parser struct {
 	parsedEvents    []*Event
 	statusCalendars int
 	wg              *sync.WaitGroup
+	httpClient      *http.Client
 }
 
 // creates new parser
@@ -41,6 +43,7 @@ func New() *Parser {
 	p.wg = new(sync.WaitGroup)
 	p.parsedCalendars = []*Calendar{}
 	p.parsedEvents = []*Event{}
+	p.httpClient = http.DefaultClient
 
 	// buffers the events output chan
 	go func() {
@@ -148,7 +151,7 @@ func (p *Parser) getICal(url string) (string, error) {
 
 	if re.FindString(url) != "" {
 		// download the file and store it local
-		fileName, errDownload = downloadFromUrl(url)
+		fileName, errDownload = downloadFromUrl(url, p.httpClient)
 
 		if errDownload != nil {
 			return "", errDownload
@@ -177,6 +180,12 @@ func (p *Parser) getICal(url string) (string, error) {
 	}
 
 	return fmt.Sprintf("%s", fileContent), nil
+}
+
+// set the http client for using arbirtrary http clients like
+// the google appengine's UrlFetch service
+func (p *Parser) SetHttpClient(c *http.Client) {
+	p.httpClient = c
 }
 
 // ======================== CALENDAR PARSING ===================

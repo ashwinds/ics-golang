@@ -42,7 +42,7 @@ const YmdHis = "2006-01-02 15:04:05"
 const IcsFormatWholeDay = "20060102"
 
 // downloads the calendar before parsing it
-func downloadFromUrl(url string) (string, error) {
+func downloadFromUrl(url string, client *http.Client) (string, error) {
 	// split the url to get the name of the file (like basic.ics)
 	tokens := strings.Split(url, "/")
 
@@ -63,7 +63,7 @@ func downloadFromUrl(url string) (string, error) {
 	defer output.Close()
 
 	// get the URL
-	response, err := http.Get(url)
+	response, err := client.Get(url)
 
 	if err != nil {
 
